@@ -14,15 +14,15 @@ function index(req,res) {
         //     resArray = postsArray.filter(post => post.tags.includes(req.query.tag))
         //     console.log(req.query.tag)
         // }
-        // res.json(resArray)
+        // res.json(resArray) 
 }
 
-function show(req, res) {
-    const postID = parseInt(req.params.id)
-    const thisPost = postsArray.find(post => post.id === postID)
+function show(req, res) { 
+    const postID = parseInt(req.params.id) 
+    const thisPost = postsArray.find(post => post.id === postID) 
 
-    if (!thisPost) {
-        res.status(404).json({
+    if (!thisPost) { 
+        res.status(404).json({ 
             success: false,
             message: 'Post non trovato' 
         })
@@ -32,7 +32,7 @@ function show(req, res) {
     
 }
 
-function store(req, res) {
+function store(req, res) { 
     const { title, img, tags, content } = req.body;
 
     //Request Error Handling 
@@ -43,8 +43,8 @@ function store(req, res) {
         })
     }
 
-    if (typeof img !== 'string') {
-        res.status(400).json({
+    if (typeof img !== 'string') { 
+        res.status(400).json({ 
             success: false,
             message: 'Img deve essere una stringa'
         })
@@ -53,7 +53,7 @@ function store(req, res) {
     // Creazione nuovo Post
     const maxID = Math.max(...postsArray.map(post => post.id))
 
-    const newPost = {
+    const newPost = { 
         id: maxID + 1,
         title: title,
         content: content,
@@ -156,20 +156,27 @@ function modify(req, res) {
 function destroy(req, res) {
 
     const postID = parseInt(req.params.id)
-    const postIndex = postsArray.findIndex(post => post.id === postID)
+
+    const sql = 'DELETE FROM posts WHERE id = ?'
+    connection.query(sql, [postID], (err) => {
+        if (err) return res.status(500).json({error: 'failed to delete post'});
+        res.sendStatus(204);
+    }) 
+
+    // const postIndex = postsArray.findIndex(post => post.id === postID)
 
 
-    if (postIndex === -1) {
-        res.status(404).json({
-            success: false,
-            message: 'Post non trovato' 
-        })
-    } 
+    // if (postIndex === -1) {
+    //     res.status(404).json({
+    //         success: false,
+    //         message: 'Post non trovato' 
+    //     })
+    // } 
 
-    postsArray.splice(postIndex, 1)
-    console.log(postsArray)
+    // postsArray.splice(postIndex, 1)
+    // console.log(postsArray)
 
-    res.sendStatus(204)
+    // res.sendStatus(204)
     
 }
 
