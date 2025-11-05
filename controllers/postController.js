@@ -1,7 +1,7 @@
 const {postsArray} = require('../data/postsArray.js')
 const connection  = require('../data/configuration.js')
 
-function index(req,res) {
+function index(req, res) {
     
     const sql = 'SELECT * FROM posts'
 
@@ -18,17 +18,26 @@ function index(req,res) {
 }
 
 function show(req, res) { 
+
     const postID = parseInt(req.params.id) 
-    const thisPost = postsArray.find(post => post.id === postID) 
+    const sql = 'SELECT * FROM posts WHERE id = ?'
 
-    if (!thisPost) { 
-        res.status(404).json({ 
-            success: false,
-            message: 'Post non trovato' 
-        })
-    }
+    connection.query(sql, [postID], (err, result) => {
+        if (err) throw err;
+        else if (result.length === 0) return res.status(404).json({error: 'no item with current parameter id'})
+        res.status(200).json(result)
+    })
 
-    res.json(thisPost)
+    // const thisPost = postsArray.find(post => post.id === postID) 
+
+    // if (!thisPost) { 
+    //     res.status(404).json({ 
+    //         success: false,
+    //         message: 'Post non trovato' 
+    //     })
+    // }
+
+    // res.json(thisPost)
     
 }
 
