@@ -2,13 +2,19 @@ const {postsArray} = require('../data/postsArray.js')
 const connection  = require('../data/configuration.js')
 
 function index(req,res) {
+    
+    const sql = 'SELECT * FROM posts'
 
-        let resArray = postsArray
-        if (req.query.tag) {
-            resArray = postsArray.filter(post => post.tags.includes(req.query.tag))
-            console.log(req.query.tag)
-        }
-        res.json(resArray)
+    connection.query(sql, (err, result) => {
+        if (err) return res.status(500).json({error: 'server cannot retrieve data from database'});
+        res.json(result)
+    })
+        // let resArray = postsArray
+        // if (req.query.tag) {
+        //     resArray = postsArray.filter(post => post.tags.includes(req.query.tag))
+        //     console.log(req.query.tag)
+        // }
+        // res.json(resArray)
 }
 
 function show(req, res) {
