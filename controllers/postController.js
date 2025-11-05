@@ -1,5 +1,5 @@
 const {postsArray} = require('../data/postsArray.js')
-const connection  = require('../data/configuration.js')
+const connection  = require('../data/configuration.js');
 
 function index(req, res) {
     
@@ -20,26 +20,19 @@ function index(req, res) {
 function show(req, res) { 
 
     const postID = parseInt(req.params.id) 
-    const sql = 'SELECT * FROM posts WHERE id = ?'
+    const sql = 'SELECT posts.*, tags.label as tag_label FROM posts JOIN post_tag ON post_tag.post_id = posts.id JOIN tags ON post_tag.tag_id = tags.id WHERE posts.id=?;'
 
     connection.query(sql, [postID], (err, result) => {
-        if (err) throw err;
-        else if (result.length === 0) return res.status(404).json({error: 'no item with current parameter id'})
-        res.status(200).json(result)
-    })
 
-    // const thisPost = postsArray.find(post => post.id === postID) 
-
-    // if (!thisPost) { 
-    //     res.status(404).json({ 
-    //         success: false,
-    //         message: 'Post non trovato' 
-    //     })
-    // }
-
-    // res.json(thisPost)
-    
+        if (err) return res.status(500).json({error: 'DATABASE ERROR'}); 
+        else if (result.length === 0) return res.status(404).json({error: 'no post with current parameter id', id: postID})
+            
+        const { tag_label, ...postData } =  result[0]
+        const tags = result.map(x => x.tag_label).filter(tag => tag !== null)
+        res.status(200).json({...postData, tags})
+        })
 }
+    
 
 function store(req, res) { 
     const { title, img, tags, content } = req.body;
