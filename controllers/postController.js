@@ -33,59 +33,61 @@ function show(req, res) {
         })
 }
     
-
 function store(req, res) { 
-    const { title, img, tags, content } = req.body;
+    const { title, image, content } = req.body; 
 
     //Request Error Handling 
-    if (!title || !content) {
-        res.status(400).json({
-            success: false,
-            message: 'Title e Content sono obbligatori'
-        })
+    if (!title || !content || !image) {
+        return res.status(400).json({
+                success: false,
+                message: 'Title e Content sono obbligatori'
+            })
     }
+    
+    const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
 
-    if (typeof img !== 'string') { 
-        res.status(400).json({ 
-            success: false,
-            message: 'Img deve essere una stringa'
-        })
-    }
+    connection.query(sql, [title, content, image], (err, result) => {
+        if (err) return res.status(500).json({message: 'server error', err})
+
+        
+
+        //New Object
+        const newPost = {
+            id: result.insertId,
+            title,
+            content,
+            image
+        }
+
+        res.status(201).json(newPost)
+    })
+
+    
+// if (typeof img !== 'string') { 
+    //     res.status(400).json({ 
+    //         success: false,
+    //         message: 'Img deve essere una stringa'
+    //     })
+    
+
+    
 
     // Creazione nuovo Post
-    const maxID = Math.max(...postsArray.map(post => post.id))
+    // const maxID = Math.max(...postsArray.map(post => post.id))
 
-    const newPost = { 
-        id: maxID + 1,
-        title: title,
-        content: content,
-        img: img,
-        tags: Array.isArray(tags) ? tags : []
-    }
-
-    postsArray.push(newPost)
-    console.log(postsArray);
-    
-    res.status(201).json(newPost)
-
-    //IMPLEMENTAZIONE ELEMENTARE
-    // const newId = postsArray.length
-    // const newTitle = `Post ${newId}`
-    // const newContent = `Contenuto del ${newTitle}`
-    // const newImg = 'some_url'
-    // const newTags = ['cucina']
-
-    // const newPost = {
-    //     id: newId,
-    //     title: newTitle,
-    //     content: newContent,
-    //     img: newImg,
-    //     tags: newTags
+    // const newPost = { 
+    //     id: maxID + 1,
+    //     title: title,
+    //     content: content,
+    //     img: img,
+    //     tags: Array.isArray(tags) ? tags : []
     // }
 
     // postsArray.push(newPost)
-    // res.json(newPost)
-
+    // console.log(postsArray); 
+    
+    // res.status(201).json(newPost)
+   
 }
 
 function update(req, res) {
