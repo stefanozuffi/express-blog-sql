@@ -1,4 +1,5 @@
 const {postsArray} = require('../data/postsArray.js')
+const connection  = require('../data/configuration.js')
 
 function index(req,res) {
 

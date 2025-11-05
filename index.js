@@ -18,7 +18,7 @@ blogServer.use(express.static('public'))
 
 
 //Home
-blogServer.get('/api/', (req, res) => {
+blogServer.get('/', (req, res) => {
     res.send('Benevenuto nel server del mio blog')
 })
 
