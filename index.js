@@ -2,6 +2,7 @@ const express = require('express')
 const blogServer = express()
 const port = 3000
 const postsRouter = require('./routers/posts.js') 
+const tagsRouter = require('./routers/tags.js')
 const serverError = require('./middlewares/serverError.js')
 const notFoundErr = require('./middlewares/notFoundErr.js')
 
@@ -24,6 +25,7 @@ blogServer.get('/', (req, res) => {
 
 //ROUTES FOR POSTS
 blogServer.use('/api/posts', postsRouter)
+blogServer.use('/api/tags', tagsRouter)
 
 //Error Handler (500)
 blogServer.use(serverError)

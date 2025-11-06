@@ -39,7 +39,7 @@ async function store(req, res) {
 
     //Request Error Handling 
     if (!title || !content || !image) { 
-        return res.status(400).json({
+        return res.status(400).json({ 
                 success: false, 
                 message: 'Title, Content and Image must be not null in req.body' 
             }) 
@@ -87,71 +87,6 @@ async function store(req, res) {
     catch (error) {
         res.status(500).json({ message: 'Server Error', error: error });
     }
-
-    
-    // //QUERY
-    // const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
-
-    // connection.query(sql, [title, content, image], (err, result) => {
-    //     if (err) return res.status(500).json({message: 'server error', err}) 
-
-    //     //Construct New Post-Object 
-    //     const newPost = {
-    //         id: result.insertId, 
-    //         title, 
-    //         content, 
-    //         image 
-    //     }
-
-    //     //Get Tags' labels list & Update post_tag pivot table 
-
-    //     const pivot_query = `INSERT INTO post_tag (post_id, tag_id) VALUES (? ,?)`
-
-    //     const tags = tag_ids.map(tagID => {
-    //          connection.query(pivot_query, [newPost.id, tagID], (pivot_err) => {
-    //             if (pivot_err) return res.status(500)
-    //          })
-
-    //          const query = 'SELECT * FROM tags WHERE id = ?'
-    //          connection.query(query, [tagID], (tag_err, tag_result) => {
-    //             if (tag_err) return res.status(400).json({error: 'Tag not found', tagID: tagID}) 
-    //             return tag_result[0].label
-    //          })
-    //     })
-
-    //     res.status(201).json(
-    //         {
-    //         ...newPost,
-    //          tags
-    //         })
-    // })
-
-    
-// if (typeof img !== 'string') { 
-    //     res.status(400).json({ 
-    //         success: false,
-    //         message: 'Img deve essere una stringa'
-    //     })
-    
-
-    
-
-    // Creazione nuovo Post
-    // const maxID = Math.max(...postsArray.map(post => post.id))
-
-    // const newPost = { 
-    //     id: maxID + 1,
-    //     title: title,
-    //     content: content,
-    //     img: img,
-    //     tags: Array.isArray(tags) ? tags : []
-    // }
-
-    // postsArray.push(newPost)
-    // console.log(postsArray); 
-    
-    // res.status(201).json(newPost)
-   
 }
 
 function update(req, res) {
