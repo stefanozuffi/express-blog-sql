@@ -1,6 +1,8 @@
 const {postsArray} = require('../data/postsArray.js')
 const { connection, query }  = require('../data/configuration.js');
 
+const digits = ['0','1','2','3','4','5','6','7','8','9']
+
 function index(req, res) {
     
     const sql = 'SELECT * FROM posts'
@@ -61,18 +63,44 @@ async function store(req, res) {
         const tags = [] 
 
         //If the tagID is valid, we push its label in tags + add row to post_tag
-        if (tag_ids.length > 0) {
-            for (const tagID of tag_ids) {
-                const tag_sql = 'SELECT * FROM tags WHERE id=?'
+        if (tag_ids.length > 0) { 
+            for (const tagEn of tag_ids) {  
+                if (typeof tagEn === 'string' || typeof tagEn === 'number') {
 
-                const tag_result = await query(tag_sql, [tagID])
-                if (tag_result.length > 0) {
+                    let tag_result;
+
+                    //if tagEn is a number or a string only composed by numbers (ID):
+                    if (typeof tagEn === 'number' || 
+                    (typeof tagEn === 'string' && tagEn.split('').every(char => digits.includes(char)))) {
+                        
+                        const tagID_sql = 'SELECT * FROM tags WHERE id=?' 
+                        tag_result = await query(tagID_sql, [tagEn]) 
+                       
+                    }
+
+                    //every other case, i.e. LABEL
+                    else {
+                        const tagLABEL_sql = 'SELECT * FROM tags WHERE label=?' 
+                        const label_result = await query(tagLABEL_sql, [tagEn]) 
+
+                        if (label_result.length === 0) { 
+                            //ADD tagEN to 'tags' in the db
+                            await query('INSERT INTO tags (label) VALUES (?)', [tagEn])
+                        } 
+
+                    }
+
+                if (tag_result.length > 0) { 
                     const pivot_sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)'
-                    await query(pivot_sql, [newID, tagID])
+                    await query(pivot_sql, [newID, tagEn]) 
 
-                    tags.push(tag_result[0].label)
+                    tags.push(tag_result[0].label) 
+
+                }
                 } 
+                    
             }
+            
         }
 
         res.status(201).json({
