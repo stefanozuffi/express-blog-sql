@@ -1,5 +1,5 @@
 const {postsArray} = require('../data/postsArray.js')
-const connection  = require('../data/configuration.js');
+const { connection, query }  = require('../data/configuration.js');
 
 function index(req, res) {
     
@@ -27,40 +27,104 @@ function show(req, res) {
         if (err) return res.status(500).json({error: 'DATABASE ERROR'}); 
         else if (result.length === 0) return res.status(404).json({error: 'no post with current parameter id', id: postID})
             
-        const { tag_label, ...postData } =  result[0]
+        const { tag_label, ...postData } =  result[0] 
         const tags = result.map(x => x.tag_label).filter(tag => tag !== null)
-        res.status(200).json({...postData, tags})
+        res.status(200).json({...postData, tags}) 
         })
 }
     
-function store(req, res) { 
-    const { title, image, content } = req.body; 
+async function store(req, res) { 
+
+    const { title, content, image, tag_ids=[] } = req.body; 
 
     //Request Error Handling 
-    if (!title || !content || !image) {
+    if (!title || !content || !image) { 
         return res.status(400).json({
-                success: false,
-                message: 'Title e Content sono obbligatori'
-            })
-    }
-    
-    const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
+                success: false, 
+                message: 'Title, Content and Image must be not null in req.body' 
+            }) 
+    } 
 
-    connection.query(sql, [title, content, image], (err, result) => {
-        if (err) return res.status(500).json({message: 'server error', err})
+    //Tags Handling
+    if (!Array.isArray(tag_ids)) {
+        res.status(400).json({
+            success: false, 
+            message: '"tags" in req.body is not an Array' 
+        }) 
+    } 
 
-        
+    try {
+        const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
+        const result = await query(sql, [title, content, image])
 
-        //New Object
-        const newPost = {
-            id: result.insertId,
-            title,
-            content,
-            image
+        const newID = result.insertId 
+        const tags = [] 
+
+        //If the tagID is valid, we push its label in tags + add row to post_tag
+        if (tag_ids.length > 0) {
+            for (const tagID of tag_ids) {
+                const tag_sql = 'SELECT * FROM tags WHERE id=?'
+
+                const tag_result = await query(tag_sql, [tagID])
+                if (tag_result.length > 0) {
+                    const pivot_sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)'
+                    await query(pivot_sql, [newID, tagID])
+
+                    tags.push(tag_result[0].label)
+                } 
+            }
         }
 
-        res.status(201).json(newPost)
-    })
+        res.status(201).json({
+            id: newID, 
+            title, 
+            content, 
+            image, 
+            tags 
+        })
+
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error });
+    }
+
+    
+    // //QUERY
+    // const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
+
+    // connection.query(sql, [title, content, image], (err, result) => {
+    //     if (err) return res.status(500).json({message: 'server error', err}) 
+
+    //     //Construct New Post-Object 
+    //     const newPost = {
+    //         id: result.insertId, 
+    //         title, 
+    //         content, 
+    //         image 
+    //     }
+
+    //     //Get Tags' labels list & Update post_tag pivot table 
+
+    //     const pivot_query = `INSERT INTO post_tag (post_id, tag_id) VALUES (? ,?)`
+
+    //     const tags = tag_ids.map(tagID => {
+    //          connection.query(pivot_query, [newPost.id, tagID], (pivot_err) => {
+    //             if (pivot_err) return res.status(500)
+    //          })
+
+    //          const query = 'SELECT * FROM tags WHERE id = ?'
+    //          connection.query(query, [tagID], (tag_err, tag_result) => {
+    //             if (tag_err) return res.status(400).json({error: 'Tag not found', tagID: tagID}) 
+    //             return tag_result[0].label
+    //          })
+    //     })
+
+    //     res.status(201).json(
+    //         {
+    //         ...newPost,
+    //          tags
+    //         })
+    // })
 
     
 // if (typeof img !== 'string') { 

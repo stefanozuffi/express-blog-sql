@@ -13,4 +13,8 @@ connection.connect((err) => {
     
 })
 
-module.exports = connection
+// Transforms connection.query in a function Promise-based
+const util = require('util')
+const query = util.promisify(connection.query).bind(connection);
+ 
+module.exports = { connection, query };
