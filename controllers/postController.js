@@ -1,7 +1,7 @@
 const {postsArray} = require('../data/postsArray.js')
 const { connection, query }  = require('../data/configuration.js');
 
-const digits = ['0','1','2','3','4','5','6','7','8','9']
+const digits = ['0','1','2','3','4','5','6','7','8','9'];
 
 function index(req, res) {
     
@@ -49,7 +49,7 @@ async function store(req, res) {
 
     //Tags Handling
     if (!Array.isArray(tag_ids)) {
-        res.status(400).json({
+        return res.status(400).json({
             success: false, 
             message: '"tags" in req.body is not an Array' 
         }) 
@@ -57,51 +57,76 @@ async function store(req, res) {
 
     try {
         const sql = 'INSERT INTO posts (title, content, image) VALUES (?, ?, ?)'
-        const result = await query(sql, [title, content, image])
-
+        const result = await query(sql, [title, content, image]) 
         const newID = result.insertId 
         const tags = [] 
 
-        //If the tagID is valid, we push its label in tags + add row to post_tag
+        
         if (tag_ids.length > 0) { 
-            for (const tagEn of tag_ids) {  
-                if (typeof tagEn === 'string' || typeof tagEn === 'number') {
+            for (const tagEn of tag_ids) { 
 
-                    let tag_result;
+                //Type Validation
+                if (typeof tagEn != 'string' && typeof tagEn !== 'number') {
+                        console.warn(`Invalid tag type: ${typeof tagEn}, skipping`);
+                        continue;
+                    }
+                
 
-                    //if tagEn is a number or a string only composed by numbers (ID):
-                    if (typeof tagEn === 'number' || 
-                    (typeof tagEn === 'string' && tagEn.split('').every(char => digits.includes(char)))) {
+                let tag_result; 
+
+                //if tagEn is a number or a string only composed by numbers (ID):
+                if (typeof tagEn === 'number' || 
+                (typeof tagEn === 'string' && tagEn.trim().split('').every(char => digits.includes(char)))) {
                         
-                        const tagID_sql = 'SELECT * FROM tags WHERE id=?' 
-                        tag_result = await query(tagID_sql, [tagEn]) 
+                    //If the tagID is valid, we will push its label in tags + add row to post_tag
+                    const tagID_sql = 'SELECT * FROM tags WHERE id=?' 
+                    const id_result = await query(tagID_sql, [tagEn]) 
+
+                    if (id_result.length === 0) {
+                        console.warn(`Tag ID ${tagEn} not found, skipping`);
+                        continue;  
+                    }
+
+                    tag_result = id_result[0]
+                   
                        
-                    }
-
-                    //every other case, i.e. LABEL
-                    else {
-                        const tagLABEL_sql = 'SELECT * FROM tags WHERE label=?' 
-                        const label_result = await query(tagLABEL_sql, [tagEn]) 
-
-                        if (label_result.length === 0) { 
-                            //ADD tagEN to 'tags' in the db
-                            await query('INSERT INTO tags (label) VALUES (?)', [tagEn])
-                        } 
-
-                    }
-
-                if (tag_result.length > 0) { 
-                    const pivot_sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)'
-                    await query(pivot_sql, [newID, tagEn]) 
-
-                    tags.push(tag_result[0].label) 
-
                 }
-                } 
-                    
-            }
-            
-        }
+
+                //every other case, i.e. LABEL
+                else {
+                    const tagLABEL_sql = 'SELECT * FROM tags WHERE label=?' 
+                    const label_result = await query(tagLABEL_sql, [tagEn]) 
+                        
+                        if (label_result.length === 0) { 
+
+                            //Validation of new label
+                            const trimmed = tagEn.trim()
+                            if (trimmed.length === 0) { 
+                                console.warn('Empty label, skipping'); 
+                                continue;
+                            }
+                            if (trimmed.length > 50) {
+                                console.warn(`Label "${trimmed}" is too long (max 50 characters), skipping`)
+                                continue;
+                            }
+
+                            //ADD tagEN to 'tags' in the db
+                            const newTagQuery = await query('INSERT INTO tags (label) VALUES (?)', [tagEn])
+                            tag_result = {
+                                id: newTagQuery.insertId,
+                                label: tagEn
+                            }
+                        } else {
+                            tag_result = label_result[0] 
+                        }
+                    }
+
+                if (tag_result && tag_result.id) { 
+                    const pivot_sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)'
+                    await query(pivot_sql, [newID, tag_result.id])
+                    tags.push(tag_result.label) 
+                }} 
+            } 
 
         res.status(201).json({
             id: newID, 
@@ -113,7 +138,7 @@ async function store(req, res) {
 
     }
     catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error });
+        res.status(500).json({ message: 'Server Error', error: error.message });
     }
 }
 
